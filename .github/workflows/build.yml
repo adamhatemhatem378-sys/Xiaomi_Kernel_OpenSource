@@ -1,10 +1,13 @@
 name: Build Kernel Monitor Mode
 on:
+  push:
+    branches:
+      - dandelion-q-oss
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
         uses: actions/checkout@v3
@@ -19,10 +22,15 @@ jobs:
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # تفعيل المونيتور مود في ملف الإعدادات
+          # تفعيل وضع المراقبة (Monitor Mode)
           sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' arch/arm64/configs/dandelion_user_defconfig
           echo "CONFIG_MAC80211=y" >> arch/arm64/configs/dandelion_user_defconfig
           
           make dandelion_user_defconfig
           make -j$(nproc)
-          
+
+      - name: Upload Kernel Image
+        uses: actions/upload-artifact@v3
+        with:
+          name: Kernel-Dandelion-MonitorMode
+          path: arch/arm64/boot/Image.gz-dtb
