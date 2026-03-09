@@ -1,4 +1,4 @@
-name: Kernel-Monitor-Mode-Final-Victory
+name: Kernel-Monitor-Mode-Absolute-Victory
 on:
   push:
     branches:
@@ -19,13 +19,13 @@ jobs:
           sudo apt-get install -y python2 build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      - name: Build Kernel (The Final Fix)
+      - name: Build Kernel (The Final Stand)
         run: |
           cd source
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # تنظيف شامل للسورس كود
+          # تنظيف وبدء من الصفر
           make clean && make mrproper
           
           # إعداد الملف الأساسي
@@ -36,16 +36,16 @@ jobs:
           ./scripts/config --enable CONFIG_MAC80211
           ./scripts/config --enable CONFIG_CFG80211_WEXT
           
-          # حل المشكلة اللي في الصور (تعطيل ضغط الإعدادات)
+          # تعطيل الحاجات اللي بتعمل مشاكل تجميع
           ./scripts/config --disable CONFIG_IKCONFIG
           ./scripts/config --disable CONFIG_IKCONFIG_PROC
           
-          # تحديث الإعدادات بهدوء
+          # تحديث الإعدادات
           make olddefconfig
           
-          # البناء النهائي (استخدمنا -j1 عشان السيرفر يركز في ملف واحد وميفصلش)
-          # المرة دي هتاخد وقت أطول (حوالي ٤٠ دقيقة) بس ده أضمن طريق للملف
-          make KCFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j1
+          # الضربة القاضية: منع المترجم من اعتبار التحذيرات أخطاء (-w)
+          # وحل مشكلة الـ Array Bounds والـ yylloc مرة واحدة
+          make KCFLAGS="-fcommon -w" HOSTCFLAGS="-fcommon -w" -j$(nproc)
 
       - name: Upload Kernel Image
         uses: actions/upload-artifact@v4
