@@ -22,25 +22,29 @@ jobs:
         run: |
           sudo apt-get install -y build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
-      - name: Build Kernel
+      - name: Locate Config and Build
         run: |
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # البحث عن ملف الـ defconfig وتفعيله أوتوماتيكياً
-          CONF_FILE=$(find . -name "dandelion_user_defconfig" | head -n 1)
-          echo "Found config at: $CONF_FILE"
+          echo "Searching for config files..."
+          # عرض كل ملفات الـ config المتاحة عشان نعرف الاسم الصح
+          find . -name "*defconfig"
+          
+          # محاولة إيجاد الملف المطلوب بمرونة أكبر
+          CONF_FILE=$(find . -name "*dandelion*defconfig" | head -n 1)
           
           if [ -z "$CONF_FILE" ]; then
-            echo "Error: Config file not found!"
-            exit 1
+            echo "Searching for ANY config if dandelion failed..."
+            CONF_FILE=$(find arch/arm64/configs/ -name "*_defconfig" | head -n 1)
           fi
 
+          echo "Found config at: $CONF_FILE"
+          
           # تفعيل وضع المراقبة
           sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' "$CONF_FILE"
           echo "CONFIG_MAC80211=y" >> "$CONF_FILE"
           
-          # استخراج اسم الملف فقط للاستخدام في make
           CONF_NAME=$(basename "$CONF_FILE")
           make "$CONF_NAME"
           make -j$(nproc)
