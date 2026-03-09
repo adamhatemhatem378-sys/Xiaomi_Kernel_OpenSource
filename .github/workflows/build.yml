@@ -1,4 +1,4 @@
-name: Kernel-Monitor-Mode-Final-Success
+name: Kernel-Monitor-Mode-Ultimate-Final
 on:
   push:
     branches:
@@ -11,12 +11,14 @@ jobs:
     steps:
       - name: Clone Official Xiaomi Source
         run: |
+          # سحب الكود من المصدر الموثوق اللي ظهر في صورك
           git clone --depth 1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b dandelion-q-oss source
           
       - name: Install Build Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y python2 build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu
+          # ربط بايثون 2 بالنظام لإصلاح خطأ Scripts
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
       - name: Build Kernel with Monitor Mode
@@ -25,26 +27,28 @@ jobs:
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # إعداد الملف الأساسي
+          # 1. توليد ملف الإعدادات الأصلي للجهاز
           make dandelion_defconfig
           
-          # تفعيل وضع المراقبة (Monitor Mode)
+          # 2. حقن إعدادات وضع المراقبة (Monitor Mode)
           ./scripts/config --enable CONFIG_CFG80211
           ./scripts/config --enable CONFIG_MAC80211
           ./scripts/config --enable CONFIG_CFG80211_WEXT
           
-          # حل مشكلة config_data.gz (إيقاف ضغط الإعدادات)
-          ./scripts/config --disable CONFIG_IKCONFIG_PROC
+          # 3. تعطيل الخصائص اللي سببت فشل التجميع في الصور الأخيرة (IKCONFIG)
           ./scripts/config --disable CONFIG_IKCONFIG
+          ./scripts/config --disable CONFIG_IKCONFIG_PROC
           
-          # حل مشكلة yylloc القديمة
+          # 4. قبول الإعدادات الجديدة أوتوماتيكياً
           make olddefconfig
           
-          # البناء النهائي بذكاء
+          # 5. البناء النهائي مع حل مشكلة تعارض المترجم (yylloc error)
+          # استخدمنا -j$(nproc) للسرعة، لو فشل تاني جرب -j1
           make KCFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j$(nproc)
 
       - name: Upload Kernel Image
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel-Dandelion-Final
+          name: Kernel-Dandelion-MonitorMode
+          # المسار الناتج لملف الكيرنل الجاهز للتفليش
           path: source/arch/arm64/boot/Image.gz-dtb
