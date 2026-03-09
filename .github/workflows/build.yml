@@ -1,4 +1,4 @@
-name: Kernel-Monitor-Mode-Ultimate-Final
+name: Kernel-Monitor-Mode-Final-Victory
 on:
   push:
     branches:
@@ -11,44 +11,41 @@ jobs:
     steps:
       - name: Clone Official Xiaomi Source
         run: |
-          # سحب الكود من المصدر الموثوق اللي ظهر في صورك
           git clone --depth 1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b dandelion-q-oss source
           
       - name: Install Build Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y python2 build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu
-          # ربط بايثون 2 بالنظام لإصلاح خطأ Scripts
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      - name: Build Kernel with Monitor Mode
+      - name: Build Kernel (The Clean Way)
         run: |
           cd source
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # 1. توليد ملف الإعدادات الأصلي للجهاز
+          # تنظيف أي مخلفات قديمة
+          make clean && make mrproper
+          
+          # إعداد الملف الأساسي
           make dandelion_defconfig
           
-          # 2. حقن إعدادات وضع المراقبة (Monitor Mode)
+          # تفعيل وضع المراقبة (Monitor Mode) وتعطيل الحاجات اللي بتعمل Error
           ./scripts/config --enable CONFIG_CFG80211
           ./scripts/config --enable CONFIG_MAC80211
           ./scripts/config --enable CONFIG_CFG80211_WEXT
-          
-          # 3. تعطيل الخصائص اللي سببت فشل التجميع في الصور الأخيرة (IKCONFIG)
           ./scripts/config --disable CONFIG_IKCONFIG
           ./scripts/config --disable CONFIG_IKCONFIG_PROC
           
-          # 4. قبول الإعدادات الجديدة أوتوماتيكياً
+          # تحديث الإعدادات
           make olddefconfig
           
-          # 5. البناء النهائي مع حل مشكلة تعارض المترجم (yylloc error)
-          # استخدمنا -j$(nproc) للسرعة، لو فشل تاني جرب -j1
-          make KCFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j$(nproc)
+          # البناء النهائي (استخدمنا -j2 عشان السيرفر ميتخنقش ويفصل في الآخر)
+          make KCFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j2
 
       - name: Upload Kernel Image
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel-Dandelion-MonitorMode
-          # المسار الناتج لملف الكيرنل الجاهز للتفليش
+          name: Kernel-Dandelion-Final
           path: source/arch/arm64/boot/Image.gz-dtb
