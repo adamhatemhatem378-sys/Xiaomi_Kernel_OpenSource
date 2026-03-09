@@ -1,4 +1,4 @@
-name: Build Kernel Monitor Mode
+name: Kernel-Monitor-Mode-Build
 on:
   push:
     branches:
@@ -7,20 +7,15 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Set up Python 2.7
-        uses: actions/setup-python@v5
-        with:
-          python-version: '2.7'
-
       - name: Install Build Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y build-essential bc libssl-dev libncurses5-dev git python2 gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build Kernel
         run: |
@@ -39,4 +34,3 @@ jobs:
         with:
           name: Kernel-Dandelion-MonitorMode
           path: arch/arm64/boot/Image.gz-dtb
-          
