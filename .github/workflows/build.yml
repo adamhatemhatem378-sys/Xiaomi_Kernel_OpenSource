@@ -1,4 +1,4 @@
-name: Kernel-Monitor-Mode-Absolute-Victory
+name: Kernel-Monitor-Mode-Elite-Build
 on:
   push:
     branches:
@@ -19,13 +19,13 @@ jobs:
           sudo apt-get install -y python2 build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      - name: Build Kernel (The Final Stand)
+      - name: Build Kernel (Safe & Stable)
         run: |
           cd source
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # تنظيف وبدء من الصفر
+          # تنظيف وبدء على بياض
           make clean && make mrproper
           
           # إعداد الملف الأساسي
@@ -36,19 +36,19 @@ jobs:
           ./scripts/config --enable CONFIG_MAC80211
           ./scripts/config --enable CONFIG_CFG80211_WEXT
           
-          # تعطيل الحاجات اللي بتعمل مشاكل تجميع
+          # تعطيل المسببات التقليدية للأخطاء
           ./scripts/config --disable CONFIG_IKCONFIG
           ./scripts/config --disable CONFIG_IKCONFIG_PROC
           
           # تحديث الإعدادات
           make olddefconfig
           
-          # الضربة القاضية: منع المترجم من اعتبار التحذيرات أخطاء (-w)
-          # وحل مشكلة الـ Array Bounds والـ yylloc مرة واحدة
-          make KCFLAGS="-fcommon -w" HOSTCFLAGS="-fcommon -w" -j$(nproc)
+          # الاستراتيجية الجديدة: بناء هادئ لتجنب انهيار الذاكرة (Memory Leak)
+          # استخدمنا -j2 بدلاً من nproc لضمان استقرار الـ Linking في النهاية
+          make KCFLAGS="-fcommon -w" HOSTCFLAGS="-fcommon -w" -j2
 
       - name: Upload Kernel Image
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel-Dandelion-Final
+          name: Kernel-Dandelion-Final-V63
           path: source/arch/arm64/boot/Image.gz-dtb
