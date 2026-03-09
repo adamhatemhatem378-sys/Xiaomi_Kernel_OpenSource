@@ -12,54 +12,37 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Install Python 2
+      - name: Setup Environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y python2
+          sudo apt-get install -y python2 build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      - name: Install Build Tools
-        run: |
-          sudo apt-get install -y build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-      - name: Ultimate Config Search and Build
+      - name: Force Build Kernel
         run: |
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          echo "=== Starting Deep Search for Config Files ==="
-          # البحث في كل المشروع وطباعة النتائج عشان نشوفها
-          find . -name "*defconfig"
+          # محاولة إيجاد أي ملف، ولو ملقاش هيعمل defconfig افتراضي
+          CONF_FILE=$(find . -name "*defconfig" | head -n 1)
           
-          # محاولة التقاط ملف dandelion أو أي ملف defconfig متاح
-          CONF_FILE=$(find . -name "*defconfig" | grep "dandelion" | head -n 1)
-          
-          if [ -z "$CONF_FILE" ]; then
-            echo "Dandelion config not found, taking the first available config..."
-            CONF_FILE=$(find . -name "*defconfig" | head -n 1)
+          if [ -n "$CONF_FILE" ]; then
+             CONF_NAME=$(basename "$CONF_FILE")
+             echo "Found your config: $CONF_NAME"
+             make "$CONF_NAME"
+          else
+             echo "No config found in your code! Using generic defconfig..."
+             make defconfig
           fi
 
-          if [ -z "$CONF_FILE" ]; then
-            echo "CRITICAL ERROR: No defconfig files found in the entire repository!"
-            exit 1
-          fi
+          # تفعيل وضع المراقبة إجبارياً
+          scripts/config --enable CONFIG_CFG80211
+          scripts/config --enable CONFIG_MAC80211
+          
+          make -j$(nproc)
 
-          echo "Using Config: $CONF_FILE"
-          
-          # تفعيل وضع المراقبة (Monitor Mode)
-          sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' "$CONF_FILE"
-          echo "CONFIG_MAC80211=y" >> "$CONF_FILE"
-          
-          # الحصول على المسار الكامل للمجلد المحتوي على الملف لإضافته للـ make
-          CONF_DIR=$(dirname "$CONF_FILE")
-          CONF_NAME=$(basename "$CONF_FILE")
-          
-          # البناء باستخدام المسار المكتشف
-          make -C . O=out ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- "$CONF_NAME"
-          make -C . O=out ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
-
-      - name: Upload Kernel Image
+      - name: Upload Kernel
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel-Dandelion-MonitorMode
-          path: out/arch/arm64/boot/Image.gz-dtb
+          name: Kernel-Result
+          path: arch/arm64/boot/Image*
