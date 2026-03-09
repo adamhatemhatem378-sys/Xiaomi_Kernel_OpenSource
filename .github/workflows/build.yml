@@ -1,4 +1,4 @@
-name: Kernel-Monitor-Mode-Final
+name: Kernel-Monitor-Mode-Final-Success
 on:
   push:
     branches:
@@ -9,40 +9,35 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-
-      - name: Setup Environment
+      - name: Clone Official Xiaomi Source
+        run: |
+          # سحب الكود مباشرة من المصدر اللي في صورتك عشان نضمن وجود الملفات
+          git clone --depth 1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b dandelion-q-oss source
+          
+      - name: Install Build Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y python2 build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      - name: Force Build Kernel
+      - name: Build Kernel with Monitor Mode
         run: |
+          cd source
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # محاولة إيجاد أي ملف، ولو ملقاش هيعمل defconfig افتراضي
-          CONF_FILE=$(find . -name "*defconfig" | head -n 1)
+          # اسم الملف الصح من صورتك هو dandelion_defconfig
+          make dandelion_defconfig
           
-          if [ -n "$CONF_FILE" ]; then
-             CONF_NAME=$(basename "$CONF_FILE")
-             echo "Found your config: $CONF_NAME"
-             make "$CONF_NAME"
-          else
-             echo "No config found in your code! Using generic defconfig..."
-             make defconfig
-          fi
-
-          # تفعيل وضع المراقبة إجبارياً
-          scripts/config --enable CONFIG_CFG80211
-          scripts/config --enable CONFIG_MAC80211
+          # تفعيل وضع المراقبة (Monitor Mode)
+          ./scripts/config --enable CONFIG_CFG80211
+          ./scripts/config --enable CONFIG_MAC80211
+          ./scripts/config --enable CONFIG_CFG80211_WEXT
           
           make -j$(nproc)
 
-      - name: Upload Kernel
+      - name: Upload Kernel Image
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel-Result
-          path: arch/arm64/boot/Image*
+          name: Kernel-Dandelion-Final
+          path: source/arch/arm64/boot/Image.gz-dtb
