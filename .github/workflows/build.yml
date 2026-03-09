@@ -12,11 +12,10 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Install Python 2 (The Right Way)
+      - name: Install Python 2
         run: |
           sudo apt-get update
           sudo apt-get install -y python2
-          # ربط بايثون 2 عشان الكيرنل يشوفه
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
       - name: Install Build Tools
@@ -28,11 +27,22 @@ jobs:
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # تفعيل وضع المراقبة (Monitor Mode)
-          sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' arch/arm64/configs/dandelion_user_defconfig
-          echo "CONFIG_MAC80211=y" >> arch/arm64/configs/dandelion_user_defconfig
+          # البحث عن ملف الـ defconfig وتفعيله أوتوماتيكياً
+          CONF_FILE=$(find . -name "dandelion_user_defconfig" | head -n 1)
+          echo "Found config at: $CONF_FILE"
           
-          make dandelion_user_defconfig
+          if [ -z "$CONF_FILE" ]; then
+            echo "Error: Config file not found!"
+            exit 1
+          fi
+
+          # تفعيل وضع المراقبة
+          sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' "$CONF_FILE"
+          echo "CONFIG_MAC80211=y" >> "$CONF_FILE"
+          
+          # استخراج اسم الملف فقط للاستخدام في make
+          CONF_NAME=$(basename "$CONF_FILE")
+          make "$CONF_NAME"
           make -j$(nproc)
 
       - name: Upload Kernel Image
