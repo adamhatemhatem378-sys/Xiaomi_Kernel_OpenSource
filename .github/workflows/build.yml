@@ -22,11 +22,11 @@ jobs:
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # تفعيل وضع المراقبة في ملف الإعدادات الخاص بجهازك
+          # تفعيل إعدادات وضع المراقبة (Monitor Mode) في ملف الجهاز
           sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' arch/arm64/configs/dandelion_user_defconfig
           echo "CONFIG_MAC80211=y" >> arch/arm64/configs/dandelion_user_defconfig
           
-          # بدء عملية البناء
+          # تنفيذ أوامر البناء
           make dandelion_user_defconfig
           make -j$(nproc)
 
