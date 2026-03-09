@@ -10,28 +10,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set up Python 2.7
+        uses: actions/setup-python@v5
+        with:
+          python-version: '2.7'
 
       - name: Install Build Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential bc libssl-dev libncurses5-dev git python2 gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build Kernel
         run: |
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # تفعيل إعدادات وضع المراقبة (Monitor Mode) في ملف الجهاز
+          # تفعيل وضع المراقبة
           sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' arch/arm64/configs/dandelion_user_defconfig
           echo "CONFIG_MAC80211=y" >> arch/arm64/configs/dandelion_user_defconfig
           
-          # تنفيذ أوامر البناء
           make dandelion_user_defconfig
           make -j$(nproc)
 
       - name: Upload Kernel Image
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Kernel-Dandelion-MonitorMode
           path: arch/arm64/boot/Image.gz-dtb
