@@ -33,10 +33,14 @@ jobs:
           ./scripts/config --enable CONFIG_MAC80211
           ./scripts/config --enable CONFIG_CFG80211_WEXT
           
-          # حل مشكلة yylloc والموافقة على الإعدادات
+          # حل مشكلة config_data.gz (إيقاف ضغط الإعدادات)
+          ./scripts/config --disable CONFIG_IKCONFIG_PROC
+          ./scripts/config --disable CONFIG_IKCONFIG
+          
+          # حل مشكلة yylloc القديمة
           make olddefconfig
           
-          # البناء مع إضافة خاصية التغاضي عن أخطاء المترجم القديمة
+          # البناء النهائي بذكاء
           make KCFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j$(nproc)
 
       - name: Upload Kernel Image
