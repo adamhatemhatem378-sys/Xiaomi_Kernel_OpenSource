@@ -25,19 +25,19 @@ jobs:
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # 1. إعداد الملف الأساسي
+          # إعداد الملف الأساسي
           make dandelion_defconfig
           
-          # 2. تفعيل وضع المراقبة (Monitor Mode)
+          # تفعيل وضع المراقبة (Monitor Mode)
           ./scripts/config --enable CONFIG_CFG80211
           ./scripts/config --enable CONFIG_MAC80211
           ./scripts/config --enable CONFIG_CFG80211_WEXT
           
-          # 3. الضربة الذكية: الموافقة على الإعدادات الجديدة بهدوء
+          # حل مشكلة yylloc والموافقة على الإعدادات
           make olddefconfig
           
-          # 4. بدء البناء الفعلي
-          make -j$(nproc)
+          # البناء مع إضافة خاصية التغاضي عن أخطاء المترجم القديمة
+          make KCFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j$(nproc)
 
       - name: Upload Kernel Image
         uses: actions/upload-artifact@v4
