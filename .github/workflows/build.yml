@@ -1,41 +1,23 @@
-name: Build Kernel Monitor Mode
+name: Build Kernel
+
 on:
   push:
     branches:
-      - dandelion-q-oss
-  workflow_dispatch:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-
-      - name: Set up Python 2.7
-        uses: actions/setup-python@v5
-        with:
-          python-version: '2.7'
-
-      - name: Install Build Tools
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y build-essential bc libssl-dev libncurses5-dev git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-      - name: Build Kernel
-        run: |
-          export ARCH=arm64
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          
-          # تفعيل وضع المراقبة
-          sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' arch/arm64/configs/dandelion_user_defconfig
-          echo "CONFIG_MAC80211=y" >> arch/arm64/configs/dandelion_user_defconfig
-          
-          make dandelion_user_defconfig
-          make -j$(nproc)
-
-      - name: Upload Kernel Image
-        uses: actions/upload-artifact@v4
-        with:
-          name: Kernel-Dandelion-MonitorMode
-          path: arch/arm64/boot/Image.gz-dtb
+    - uses: actions/checkout@v3
+    - name: Set up compiler
+      run: sudo apt install clang gcc make -y
+    - name: Build Kernel
+      run: |
+        make O=out dandelion_defconfig
+        make -j$(nproc)
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: kernel-build
+        path: out/arch/arm64/boot/Image.gz-dtb
