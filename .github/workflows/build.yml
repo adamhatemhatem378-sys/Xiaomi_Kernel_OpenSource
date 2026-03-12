@@ -1,4 +1,4 @@
-herename: Build Kernel
+name: Build Kernel
 
 on:
   push:
