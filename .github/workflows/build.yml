@@ -1,5 +1,6 @@
-name: Build Kernel
+name: Build Kernel Automatically
 
+# يشتغل أول ما تعمل push على الفرع main
 on:
   push:
     branches:
@@ -7,16 +8,26 @@ on:
 
 jobs:
   build:
+    name: Build Kernel
     runs-on: ubuntu-latest
+
     steps:
+    # أول خطوة: نسخ الريبو كله
     - uses: actions/checkout@v3
-    - name: Set up compiler
-      run: sudo apt install clang gcc make -y
+
+    # إعداد الكومبايلر
+    - name: Install Compiler
+      run: sudo apt update && sudo apt install -y clang gcc make bc
+
+    # بناء الكيرنل
     - name: Build Kernel
       run: |
+        mkdir -p out
         make O=out dandelion_defconfig
-        make -j$(nproc)
-    - name: Upload
+        make -j$(nproc) O=out
+
+    # رفع النتيجة كـ artifact
+    - name: Upload Kernel
       uses: actions/upload-artifact@v3
       with:
         name: kernel-build
